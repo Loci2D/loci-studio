@@ -8,7 +8,7 @@ local Arena = {
     -- Estado do Jogador
     x = 420,
     y = 360,
-    speed = 130,
+    speed = 130, -- Velocidade de movimento configurável
     facing = 1,
     dir_x = 1,
     dir_y = 0,
@@ -57,11 +57,21 @@ local Arena = {
     export_code = ""
 }
 
+local function get_short_type(slot)
+    if not slot then return "Skill" end
+    if slot.type == "melee" then return "Melee" end
+    if slot.type == "projectile" then return "Projétil" end
+    if slot.type == "dash" then return "Dash" end
+    if slot.type == "area" then return "Área" end
+    return "Skill"
+end
+
 function Arena.init(data)
     Arena.selected_char = data.character
     Arena.slots = data.slots or {}
     Arena.x = 420
     Arena.y = 360
+    Arena.speed = 130
     Arena.active_projectiles = {}
     Arena.active_particles = {}
     Arena.active_areas = {}
@@ -75,7 +85,6 @@ function Arena.trigger_skill(slot_id)
     if not slot then return end
 
     if slot.type == "melee" then
-        -- Arquétipo 1: Melee (Golpe com Lunge)
         if Arena.is_attacking then return end
         Arena.is_attacking = true
         Arena.current_melee_slot = slot
@@ -98,7 +107,6 @@ function Arena.trigger_skill(slot_id)
         end
 
     elseif slot.type == "projectile" then
-        -- Arquétipo 2: Projétil / Disparo
         table.insert(Arena.active_projectiles, {
             x = Arena.x + Arena.dir_x * 12 * Arena.zoom,
             y = Arena.y - 8 * Arena.zoom + Arena.dir_y * 12 * Arena.zoom,
@@ -112,7 +120,6 @@ function Arena.trigger_skill(slot_id)
         })
 
     elseif slot.type == "dash" then
-        -- Arquétipo 3: Dash / Investida
         if Arena.is_dashing then return end
         Arena.is_dashing = true
         Arena.dash_timer = 0
@@ -123,7 +130,6 @@ function Arena.trigger_skill(slot_id)
         Arena.dash_target_y = Arena.y + Arena.dir_y * dist
 
     elseif slot.type == "area" then
-        -- Arquétipo 4: Área / Aura / Buff (AoE)
         local radius = slot.radius_pixels or 45
         table.insert(Arena.active_areas, {
             x = Arena.x,
@@ -179,6 +185,7 @@ function Arena.export_config()
 -- Personagem: %s
 -- ============================================================================
 local WALK_CONFIG = {
+    move_speed      = %d,      -- Velocidade de movimento (pixels/s)
     step_frequency  = %d,      -- Ritmo dos passos
     max_tilt_deg    = %d,       -- Inclinação lateral (graus)
     bob_pixels      = %.2f,    -- Elevação vertical em pixels 16x16
@@ -190,6 +197,7 @@ local SKILLS_CONFIG = {
 %s}
 ]],
         char_name,
+        math.floor(Arena.speed + 0.5),
         math.floor(Arena.walk_config.step_frequency + 0.5),
         math.floor(Arena.walk_config.max_tilt_deg + 0.5),
         Arena.walk_config.bob_pixels,
@@ -462,27 +470,65 @@ function Arena.draw()
 
     love.graphics.pop()
 
-    -- 6. HUD Inferior (4 Botões Dinâmicos de Habilidade)
-    local hud_w = 440
-    local hud_h = 76
+    -- 6. HUD Inferior Redesenhado (Hotbar Limpa e Profissional)
+    local btn_w = 100
+    local btn_h = 62
+    local btn_spacing = 12
+    local hud_w = (btn_w * 4) + (btn_spacing * 3) + 24
+    local hud_h = 82
     local hud_x = (viewport_w - hud_w) / 2
-    local hud_y = sh - hud_h - 18
+    local hud_y = sh - hud_h - 14
 
     UI.panel(hud_x, hud_y, hud_w, hud_h)
 
-    local btn_w = 95
-    local btn_h = 50
-    local btn_spacing = 10
-
     for slot_id = 1, 4 do
-        local bx = hud_x + 14 + (slot_id - 1) * (btn_w + btn_spacing)
-        local by = hud_y + 13
+        local bx = hud_x + 12 + (slot_id - 1) * (btn_w + btn_spacing)
+        local by = hud_y + 10
         local slot = Arena.slots[slot_id]
-        local label = string.format("[%d] %s", slot_id, slot and slot.type_label or "Skill")
+        local short_name = get_short_type(slot)
+        local is_hover = UI.is_hover(bx, by, btn_w, btn_h)
 
-        if UI.button("hud_slot_" .. slot_id, label, bx, by, btn_w, btn_h) then
+        -- Trigger de clique no botão do HUD
+        if is_hover and UI.mouse_pressed then
             Arena.trigger_skill(slot_id)
         end
+
+        -- Fundo do botão
+        if is_hover then
+            love.graphics.setColor(0.24, 0.29, 0.38, 1)
+        else
+            love.graphics.setColor(0.16, 0.19, 0.25, 1)
+        end
+        love.graphics.rectangle("fill", bx, by, btn_w, btn_h, 6, 6)
+
+        -- Borda
+        if is_hover then
+            love.graphics.setColor(0.35, 0.75, 1.0, 1)
+        else
+            love.graphics.setColor(0.26, 0.31, 0.40, 1)
+        end
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", bx, by, btn_w, btn_h, 6, 6)
+
+        -- Badge de Tecla (Atalho) no topo esquerdo
+        local key_label = tostring(slot_id)
+        if slot_id == 1 then key_label = "1/Esp" end
+        love.graphics.setColor(0.20, 0.55, 0.90, 0.85)
+        love.graphics.rectangle("fill", bx + 6, by + 5, 26 + (slot_id == 1 and 14 or 0), 16, 4, 4)
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.print(key_label, bx + 9, by + 6)
+
+        -- Ícone / Miniatura do Sprite (se houver) no centro
+        if slot and slot.sprite then
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(slot.sprite, bx + btn_w / 2, by + 26, 0, 1.5, 1.5, slot.sprite:getWidth() / 2, slot.sprite:getHeight() / 2)
+        end
+
+        -- Rótulo Conciso no rodapé do botão (Melee, Projétil, Dash, Área)
+        local font = love.graphics.getFont()
+        local tw = font:getWidth(short_name)
+        love.graphics.setColor(is_hover and 1 or 0.85, is_hover and 1 or 0.90, is_hover and 1 or 0.95, 1)
+        love.graphics.print(short_name, bx + (btn_w - tw) / 2, by + btn_h - 18)
     end
 
     -- 7. Barra Lateral de Ajustes Dinâmicos
@@ -524,12 +570,16 @@ function Arena.draw()
         end
     end
 
-    cy = cy + 10
+    cy = cy + 6
 
-    -- Seção 2: Parâmetros de Caminhada
+    -- Seção 2: Parâmetros da Caminhada
     love.graphics.setColor(0.4, 0.8, 1, 1)
     love.graphics.print("PARÂMETROS DA CAMINHADA", sb_x + pad, cy)
     cy = cy + 20
+
+    -- Slider de Velocidade de Movimento (NOVO!)
+    Arena.speed = UI.slider("sld_speed", "Velocidade de Movimento", Arena.speed, 50, 300, 5, sb_x + pad, cy, ctrl_w, 34, " px/s")
+    cy = cy + 40
 
     Arena.walk_config.step_frequency = UI.slider("sld_freq", "Ritmo dos Passos", Arena.walk_config.step_frequency, 5, 25, 1, sb_x + pad, cy, ctrl_w, 34)
     cy = cy + 40
@@ -541,41 +591,41 @@ function Arena.draw()
     cy = cy + 40
 
     Arena.walk_config.squash_amount = UI.slider("sld_squash", "Squash & Stretch", Arena.walk_config.squash_amount, 0, 0.15, 0.01, sb_x + pad, cy, ctrl_w, 34)
-    cy = cy + 44
+    cy = cy + 42
 
     -- Seção 3: Visual & Câmera
     local wip_text = Arena.walk_in_place and "Andando no Lugar: [ON]" or "Andando no Lugar: [OFF]"
-    if UI.button("btn_wip", wip_text, sb_x + pad, cy, ctrl_w, 30, Arena.walk_in_place) then
+    if UI.button("btn_wip", wip_text, sb_x + pad, cy, ctrl_w, 28, Arena.walk_in_place) then
         Arena.walk_in_place = not Arena.walk_in_place
     end
-    cy = cy + 34
+    cy = cy + 32
 
     local z_w = (ctrl_w - 9) / 4
     for idx, z_val in ipairs({2, 4, 6, 8}) do
-        if UI.button("btn_zoom_" .. z_val, z_val .. "x", sb_x + pad + (idx - 1) * (z_w + 3), cy, z_w, 28, (Arena.zoom == z_val)) then
+        if UI.button("btn_zoom_" .. z_val, z_val .. "x", sb_x + pad + (idx - 1) * (z_w + 3), cy, z_w, 26, (Arena.zoom == z_val)) then
             Arena.zoom = z_val
         end
     end
-    cy = cy + 32
+    cy = cy + 30
 
     local bg_name = "Fundo: Grid Arena"
     if Arena.bg_style == 2 then bg_name = "Fundo: Escuro Neutro" end
     if Arena.bg_style == 3 then bg_name = "Fundo: Claro" end
     if Arena.bg_style == 4 then bg_name = "Fundo: Magenta" end
 
-    if UI.button("btn_bg", bg_name, sb_x + pad, cy, ctrl_w, 28) then
+    if UI.button("btn_bg", bg_name, sb_x + pad, cy, ctrl_w, 26) then
         Arena.bg_style = Arena.bg_style + 1
         if Arena.bg_style > 4 then Arena.bg_style = 1 end
     end
-    cy = cy + 36
+    cy = cy + 32
 
     -- Ações
-    if UI.button("btn_export", "Exportar Configuração", sb_x + pad, cy, ctrl_w, 34, true, {0.15, 0.70, 0.35}) then
+    if UI.button("btn_export", "Exportar Configuração", sb_x + pad, cy, ctrl_w, 32, true, {0.15, 0.70, 0.35}) then
         Arena.export_config()
     end
-    cy = cy + 38
+    cy = cy + 36
 
-    if UI.button("btn_back", "Trocar Configuração (Esc)", sb_x + pad, cy, ctrl_w, 32) then
+    if UI.button("btn_back", "Trocar Configuração (Esc)", sb_x + pad, cy, ctrl_w, 30) then
         return "back_to_selector"
     end
 
