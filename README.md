@@ -56,3 +56,9 @@ Salve as imagens em formato `.png` (idealmente 16x16 pixels) dentro das pastas c
   - **Caminhada Procedural:** Ajuste o ritmo dos passos (`step_frequency`), inclinação lateral (`max_tilt_deg`), elevação vertical do pé (`bob_pixels`) e compressão (`squash_amount`).
   - **Visual & Câmera:** Alterne o zoom (2x, 4x, 6x, 8x), estilos de fundo e sombra nos pés.
 - **Exportação de Configuração:** Clique em **"Exportar Configuração"** para gerar um código Lua pronto (`config_export.lua`) com a definição completa de cada slot para colar direto no card do Trello ou repassar aos desenvolvedores.
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para obter mais detalhes.
