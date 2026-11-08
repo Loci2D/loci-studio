@@ -1,6 +1,6 @@
 -- src/screen_selector.lua
 -- Tela Inicial de Seleção de Personagem e Configuração de Habilidades
--- Focado na inspeção real de sprites 32px (8 direções e sequências de frames) sem wobble.
+-- Preview interativo de animações de sprites 32px (8 direções e quadros reais)
 local UI = require("src.ui")
 local Anim = require("src.anim")
 local CharacterLoader = require("src.character_loader")
@@ -35,7 +35,7 @@ local DIR_LABELS = {
 }
 
 local PREVIEW_STATES = {
-    { id = "Rotacao", label = "Repouso (Idle)" },
+    { id = "Rotacao", label = "Repouso" },
     { id = "andando", label = "Andando" },
     { id = "correndo", label = "Correndo" },
     { id = "ataque_furia", label = "Ataque Fúria (17f)" },
@@ -61,7 +61,7 @@ local Selector = {
     selected_state_idx = 1, -- 1 = Rotacao
     preview_fps = 16,
 
-    -- Estado da Ação de Preview
+    -- Estado da Ação de Preview de Skills
     preview_action = {
         active = false,
         slot_id = nil,
@@ -142,9 +142,13 @@ function Selector.load()
         Selector.skill_slots[i].sprite_idx = math.min(Selector.skill_slots[i].sprite_idx, #Selector.skills)
     end
 
+    Selector.anim_state = Anim.new_state()
+    Selector.anim_state.is_preview = true
+    Selector.anim_state.direction = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+
     local cur_char = Selector.characters[Selector.selected_char_idx]
-    local st = PREVIEW_STATES[Selector.selected_state_idx].id
-    Anim.set_state(Selector.anim_state, cur_char, st, true, false, Selector.preview_fps)
+    local st_id = PREVIEW_STATES[Selector.selected_state_idx].id
+    Anim.set_state(Selector.anim_state, cur_char, st_id, true, false, Selector.preview_fps)
 end
 
 function Selector.rotate_preview(delta)
@@ -154,10 +158,15 @@ function Selector.rotate_preview(delta)
     elseif Selector.selected_dir_idx < 1 then
         Selector.selected_dir_idx = #DIRECTIONS_ORDER
     end
-    Selector.anim_state.direction = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+
+    local new_dir = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+    Selector.anim_state.direction = new_dir
+
     local cur_char = Selector.characters[Selector.selected_char_idx]
     if Selector.anim_state.current_anim_name and cur_char and cur_char.type == "pixellab" then
-        Selector.anim_state.frames = cur_char:get_animation_frames(Selector.anim_state.current_state, Selector.anim_state.current_anim_name, Selector.anim_state.direction)
+        local cur_idx = Selector.anim_state.frame_idx
+        Selector.anim_state.frames = cur_char:get_animation_frames(Selector.anim_state.current_state, Selector.anim_state.current_anim_name, new_dir)
+        Selector.anim_state.frame_idx = math.min(cur_idx, math.max(1, #Selector.anim_state.frames))
     end
 end
 
@@ -191,14 +200,17 @@ function Selector.play_preview(slot_id)
     act.particles = {}
     act.areas = {}
 
-    -- Se o personagem for PixelLab e a habilidade for Melee, toca animação dedicada de ataque
+    -- Dispara animação dedicada no preview
     local atk_state = (cur_char and cur_char.state_fury) or (cur_char and cur_char.state_attack)
     if cur_char and cur_char.type == "pixellab" and act.type == "melee" and atk_state then
         Anim.play_action(Selector.anim_state, cur_char, atk_state, Selector.anim_state.direction, Selector.preview_fps)
         local frame_count = #Selector.anim_state.frames
-        act.duration = (frame_count > 0) and (frame_count / Selector.preview_fps) or 0.40
+        act.duration = (frame_count > 0) and (frame_count / Selector.preview_fps) or 0.45
+    elseif cur_char and cur_char.type == "pixellab" and act.type == "projectile" and cur_char.state_projectile then
+        Anim.play_action(Selector.anim_state, cur_char, cur_char.state_projectile, Selector.anim_state.direction, Selector.preview_fps)
+        act.duration = 0.55
     else
-        act.duration = 0.40
+        act.duration = 0.45
     end
 
     if act.type == "melee" then
@@ -215,7 +227,6 @@ function Selector.play_preview(slot_id)
             })
         end
     elseif act.type == "projectile" then
-        act.duration = 0.60
         table.insert(act.projectiles, {
             x = 0,
             y = -16,
@@ -223,10 +234,10 @@ function Selector.play_preview(slot_id)
             vy = 0,
             rotation = 0,
             sprite = act.sprite,
-            life = 0.55
+            life = 0.50
         })
     elseif act.type == "dash" then
-        act.duration = 0.40
+        act.duration = 0.35
     elseif act.type == "area" then
         act.duration = 0.55
         table.insert(act.areas, {
@@ -253,12 +264,13 @@ end
 
 function Selector.update(dt)
     local cur_char = Selector.characters[Selector.selected_char_idx]
+    Selector.anim_state.is_preview = true
     Selector.anim_state.direction = DIRECTIONS_ORDER[Selector.selected_dir_idx]
 
-    -- Atualiza animação sem qualquer wobble
+    -- Atualiza animação sem forçar transição para idle
     Anim.update(Selector.anim_state, cur_char, false, 0, 0, dt, Selector.preview_fps)
 
-    -- Atualiza efeitos visuais no preview
+    -- Atualiza efeitos visuais no preview de skill
     local act = Selector.preview_action
     if act.active then
         act.timer = act.timer + dt
@@ -325,7 +337,7 @@ function Selector.update(dt)
             act.lunge_x = 0
             act.dash_x = 0
             local cur_st = PREVIEW_STATES[Selector.selected_state_idx].id
-            Anim.set_state(Selector.anim_state, cur_char, cur_st, true, false)
+            Anim.set_state(Selector.anim_state, cur_char, cur_st, true, false, Selector.preview_fps)
         end
     end
 
@@ -354,38 +366,38 @@ function Selector.draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("LOCI STUDIO — Sandbox de Sprites 32px & Animações", 30, 16)
     love.graphics.setColor(0.4, 0.75, 1, 1)
-    love.graphics.print("Animações reais de spritesheet em 8 direções (sem wobble)", 30, 40)
+    love.graphics.print("Inspeção de Animações Reais em 8 Direções (sem wobble)", 30, 40)
 
     if UI.button("btn_reload", "Recarregar Pastas (F5)", sw - 230, 18, 200, 36) then
         Selector.load()
     end
 
     -- Coluna 1: Lista de Personagens
-    local col1_w = 320
+    local col1_w = 310
     local col1_x = 30
-    local col1_y = 90
-    local col1_h = sh - 170
+    local col1_y = 86
+    local col1_h = sh - 166
 
     UI.panel(col1_x, col1_y, col1_w, col1_h, "Personagens (sprites/characters/)")
 
-    local item_y = col1_y + 48
+    local item_y = col1_y + 46
     for i, char in ipairs(Selector.characters) do
         local is_sel = (i == Selector.selected_char_idx)
         local tag = (char.type == "pixellab") and "[PixelLab 8-Dir]" or "[16x16]"
         local label = string.format("%s %s (%dx%d)", tag, char.name, char.width, char.height)
-        if UI.button("char_" .. i, label, col1_x + 14, item_y, col1_w - 28, 42, is_sel) then
+        if UI.button("char_" .. i, label, col1_x + 12, item_y, col1_w - 24, 40, is_sel) then
             Selector.selected_char_idx = i
             local cur_st = PREVIEW_STATES[Selector.selected_state_idx].id
             Anim.set_state(Selector.anim_state, char, cur_st, true, false, Selector.preview_fps)
         end
-        item_y = item_y + 48
+        item_y = item_y + 46
         if item_y > col1_y + col1_h - 50 then break end
     end
 
     -- Coluna 2: Preview Ampliado do Personagem Selecionado
-    local col2_x = col1_x + col1_w + 20
-    local col2_w = 390
-    local col2_y = 90
+    local col2_x = col1_x + col1_w + 16
+    local col2_w = 410
+    local col2_y = 86
     local col2_h = col1_h
 
     UI.panel(col2_x, col2_y, col2_w, col2_h, "Pré-Visualização do Sprite")
@@ -393,10 +405,10 @@ function Selector.draw()
     local cur_char = Selector.characters[Selector.selected_char_idx]
     if cur_char then
         local prev_cx = col2_x + col2_w / 2
-        local prev_cy = col2_y + 165
-        local prev_box_w, prev_box_h = 260, 220
+        local prev_cy = col2_y + 155
+        local prev_box_w, prev_box_h = 280, 210
 
-        -- Fundo do quadro de pré-visualização
+        -- Fundo do quadro de pré-visualização (Grid sutil de chão)
         love.graphics.setColor(0.18, 0.22, 0.28, 1)
         love.graphics.rectangle("fill", prev_cx - prev_box_w / 2, prev_cy - prev_box_h / 2, prev_box_w, prev_box_h, 8, 8)
         love.graphics.setColor(0.35, 0.40, 0.50, 1)
@@ -408,7 +420,7 @@ function Selector.draw()
         local draw_char_x = prev_cx + (act.active and (act.lunge_x + act.dash_x) or 0)
         local draw_char_y = prev_cy + 55
 
-        local preview_zoom = (cur_char.type == "pixellab") and 4.2 or 8.0
+        local preview_zoom = (cur_char.type == "pixellab") and 4.0 or 7.0
 
         -- Áreas / AoE no Preview
         for _, a in ipairs(act.areas) do
@@ -434,7 +446,7 @@ function Selector.draw()
             end
         end
 
-        -- Renderização Limpa do Personagem (Sem Wobble)
+        -- Renderização Limpa do Personagem
         Anim.draw_character(cur_char, draw_char_x, draw_char_y, Selector.anim_state, preview_zoom, true, {0.95, 0.2, 0.2, 0.6})
 
         -- Melee Slash FX (apenas se não houver animação dedicada)
@@ -483,62 +495,73 @@ function Selector.draw()
 
         -- 1. Barra de Rotação 360 no Preview
         local rot_y = prev_cy + prev_box_h / 2 + 8
-        local rot_btn_w = 40
-        if UI.button("btn_rot_prev", "↺ Q", prev_cx - 120, rot_y, rot_btn_w, 28) then
+        local rot_btn_w = 42
+        if UI.button("btn_rot_prev", "↺ Q", prev_cx - 125, rot_y, rot_btn_w, 28) then
             Selector.rotate_preview(1)
         end
 
         local dir_name = DIRECTIONS_ORDER[Selector.selected_dir_idx]
         local dir_label = DIR_LABELS[dir_name] or dir_name
-        UI.button("btn_dir_label", dir_label, prev_cx - 75, rot_y, 150, 28, false)
+        UI.button("btn_dir_label", dir_label, prev_cx - 78, rot_y, 156, 28, false)
 
-        if UI.button("btn_rot_next", "E ↻", prev_cx + 80, rot_y, rot_btn_w, 28) then
+        if UI.button("btn_rot_next", "E ↻", prev_cx + 83, rot_y, rot_btn_w, 28) then
             Selector.rotate_preview(-1)
         end
 
-        -- 2. Seletor de Estados de Animação para Visualizar no Preview
+        -- 2. Seletor de Estados no Preview (Linha 1 e Linha 2 de Botões)
         local st_y = rot_y + 34
         love.graphics.setColor(0.4, 0.8, 1, 1)
-        love.graphics.print("Estado no Preview:", col2_x + 18, st_y + 5)
+        love.graphics.print("Estados de Animação:", col2_x + 14, st_y + 4)
 
-        local st_btn_w = 58
-        local st_bx = col2_x + 145
-        for s_idx, st_data in ipairs(PREVIEW_STATES) do
+        local btn_grid_w = (col2_w - 28 - 12) / 3
+        local r1_y = st_y + 22
+        for s_idx = 1, 3 do
+            local st_data = PREVIEW_STATES[s_idx]
             local is_active = (Selector.selected_state_idx == s_idx)
-            local short_lbl = st_data.label:gsub("%s*%(.*%)", "")
-            if s_idx <= 4 then
-                if UI.button("btn_st_" .. s_idx, short_lbl, st_bx + (s_idx - 1) * (st_btn_w + 3), st_y, st_btn_w, 24, is_active) then
-                    Selector.set_preview_state(s_idx)
-                end
+            local bx = col2_x + 14 + (s_idx - 1) * (btn_grid_w + 6)
+            if UI.button("btn_st_" .. s_idx, st_data.label, bx, r1_y, btn_grid_w, 26, is_active) then
+                Selector.set_preview_state(s_idx)
+            end
+        end
+
+        local r2_y = r1_y + 30
+        for s_idx = 4, 6 do
+            local st_data = PREVIEW_STATES[s_idx]
+            local is_active = (Selector.selected_state_idx == s_idx)
+            local bx = col2_x + 14 + (s_idx - 4) * (btn_grid_w + 6)
+            if UI.button("btn_st_" .. s_idx, st_data.label, bx, r2_y, btn_grid_w, 26, is_active) then
+                Selector.set_preview_state(s_idx)
             end
         end
 
         -- 3. Controles do Player de Quadros
-        local pl_y = st_y + 28
-        local frame_txt = (#Selector.anim_state.frames > 0) and string.format("Frame %d/%d", Selector.anim_state.frame_idx, #Selector.anim_state.frames) or "Pose Estática"
+        local pl_y = r2_y + 34
+        local frame_txt = (#Selector.anim_state.frames > 0) and string.format("Frame %d/%d", Selector.anim_state.frame_idx, #Selector.anim_state.frames) or ((Selector.anim_state.current_state == "andando" or Selector.anim_state.current_state == "correndo") and string.format("Passo %d/4", Selector.anim_state.walk_step_phase or 1) or "Pose Estática")
         local p_label = Selector.anim_state.is_paused and "▶ Play" or "⏸ Pause"
-        if UI.button("btn_prev_pause", p_label, col2_x + 18, pl_y, 70, 24, Selector.anim_state.is_paused) then
+
+        if UI.button("btn_prev_pause", p_label, col2_x + 14, pl_y, 80, 26, Selector.anim_state.is_paused) then
             Anim.toggle_pause(Selector.anim_state)
         end
-        if UI.button("btn_prev_step_l", "◀", col2_x + 92, pl_y, 30, 24) then
+        if UI.button("btn_prev_step_l", "◀ Frame", col2_x + 100, pl_y, 76, 26) then
             Anim.step_frame(Selector.anim_state, -1)
         end
-        UI.button("btn_frame_info", frame_txt, col2_x + 126, pl_y, 120, 24, false)
-        if UI.button("btn_prev_step_r", "▶", col2_x + 250, pl_y, 30, 24) then
+        UI.button("btn_frame_info", frame_txt, col2_x + 182, pl_y, 140, 26, false)
+        if UI.button("btn_prev_step_r", "Frame ▶", col2_x + 328, pl_y, 76, 26) then
             Anim.step_frame(Selector.anim_state, 1)
         end
 
+        -- Rodapé do Preview
         love.graphics.setColor(0.9, 0.95, 1, 1)
-        love.graphics.print(string.format("Nome: %s", cur_char.name), col2_x + 20, col2_y + col2_h - 48)
+        love.graphics.print(string.format("Nome: %s", cur_char.name), col2_x + 14, col2_y + col2_h - 44)
         love.graphics.setColor(0.5, 0.7, 0.9, 1)
-        local fmt_str = (cur_char.type == "pixellab") and "Formato: PixelLab 32px (8 Direções reais, sem wobble)" or "Formato: Legado 16x16"
-        love.graphics.print(fmt_str, col2_x + 20, col2_y + col2_h - 28)
+        local fmt_str = (cur_char.type == "pixellab") and "Formato: PixelLab 32px (8 Direções nativas, sem wobble)" or "Formato: Legado 16x16"
+        love.graphics.print(fmt_str, col2_x + 14, col2_y + col2_h - 26)
     end
 
     -- Coluna 3: Configuração das 4 Habilidades
-    local col3_x = col2_x + col2_w + 20
+    local col3_x = col2_x + col2_w + 16
     local col3_w = sw - col3_x - 30
-    local col3_y = 90
+    local col3_y = 86
     local col3_h = col1_h
 
     UI.panel(col3_x, col3_y, col3_w, col3_h, "Configuração das 4 Habilidades")
@@ -604,7 +627,7 @@ function Selector.draw()
     love.graphics.line(0, footer_y, sw, footer_y)
 
     love.graphics.setColor(0.6, 0.7, 0.8, 1)
-    love.graphics.print("Dica: Use Q / E para girar as 8 direções e alterne entre os estados no preview para avaliar as animações.", 30, footer_y + 26)
+    love.graphics.print("Dica: Use Q / E para girar as 8 direções e alterne entre os botões de estado para inspecionar cada animação.", 30, footer_y + 26)
 
     if UI.button("btn_start", "Iniciar Arena Sandbox (Enter)", sw - 320, footer_y + 14, 290, 42, true, {0.15, 0.75, 0.35}) then
         return "start_arena"
