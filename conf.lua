@@ -1,7 +1,7 @@
 function love.conf(t)
     t.identity = "loci-studio"
     t.version = "11.5"
-    t.window.title = "Loci Studio - Sandbox de Sprites & Animações (16x16)"
+    t.window.title = "Loci Studio - Sandbox de Sprites 32px & Animações"
     t.window.width = 1280
     t.window.height = 720
     t.window.resizable = true

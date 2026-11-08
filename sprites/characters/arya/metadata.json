@@ -1,0 +1,423 @@
+{
+  "group_id": "e2d28866-e10e-4ca8-93c1-84f8a4937246",
+  "states": [
+    {
+      "character": {
+        "id": "bb99ff56-b62f-4091-8287-cfd57de541b4",
+        "name": "ataque furia",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T18:44:02.668813+00:00"
+      },
+      "folder": "ataque_furia",
+      "frames": {
+        "rotations": {
+          "south": "ataque_furia/rotations/south.png",
+          "south-east": "ataque_furia/rotations/south-east.png",
+          "east": "ataque_furia/rotations/east.png",
+          "north-east": "ataque_furia/rotations/north-east.png",
+          "north": "ataque_furia/rotations/north.png",
+          "north-west": "ataque_furia/rotations/north-west.png",
+          "west": "ataque_furia/rotations/west.png",
+          "south-west": "ataque_furia/rotations/south-west.png"
+        },
+        "animations": {
+          "ataque_furia": {
+            "north": [
+              "ataque_furia/animations/ataque_furia/north/frame_000.png",
+              "ataque_furia/animations/ataque_furia/north/frame_001.png",
+              "ataque_furia/animations/ataque_furia/north/frame_002.png",
+              "ataque_furia/animations/ataque_furia/north/frame_003.png",
+              "ataque_furia/animations/ataque_furia/north/frame_004.png",
+              "ataque_furia/animations/ataque_furia/north/frame_005.png",
+              "ataque_furia/animations/ataque_furia/north/frame_006.png",
+              "ataque_furia/animations/ataque_furia/north/frame_007.png",
+              "ataque_furia/animations/ataque_furia/north/frame_008.png",
+              "ataque_furia/animations/ataque_furia/north/frame_009.png",
+              "ataque_furia/animations/ataque_furia/north/frame_010.png",
+              "ataque_furia/animations/ataque_furia/north/frame_011.png",
+              "ataque_furia/animations/ataque_furia/north/frame_012.png",
+              "ataque_furia/animations/ataque_furia/north/frame_013.png",
+              "ataque_furia/animations/ataque_furia/north/frame_014.png",
+              "ataque_furia/animations/ataque_furia/north/frame_015.png",
+              "ataque_furia/animations/ataque_furia/north/frame_016.png"
+            ],
+            "south-west": [
+              "ataque_furia/animations/ataque_furia/south-west/frame_000.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_001.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_002.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_003.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_004.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_005.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_006.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_007.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_008.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_009.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_010.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_011.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_012.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_013.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_014.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_015.png",
+              "ataque_furia/animations/ataque_furia/south-west/frame_016.png"
+            ],
+            "south-east": [
+              "ataque_furia/animations/ataque_furia/south-east/frame_000.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_001.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_002.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_003.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_004.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_005.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_006.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_007.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_008.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_009.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_010.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_011.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_012.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_013.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_014.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_015.png",
+              "ataque_furia/animations/ataque_furia/south-east/frame_016.png"
+            ],
+            "north-west": [
+              "ataque_furia/animations/ataque_furia/north-west/frame_000.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_001.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_002.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_003.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_004.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_005.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_006.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_007.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_008.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_009.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_010.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_011.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_012.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_013.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_014.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_015.png",
+              "ataque_furia/animations/ataque_furia/north-west/frame_016.png"
+            ],
+            "east": [
+              "ataque_furia/animations/ataque_furia/east/frame_000.png",
+              "ataque_furia/animations/ataque_furia/east/frame_001.png",
+              "ataque_furia/animations/ataque_furia/east/frame_002.png",
+              "ataque_furia/animations/ataque_furia/east/frame_003.png",
+              "ataque_furia/animations/ataque_furia/east/frame_004.png",
+              "ataque_furia/animations/ataque_furia/east/frame_005.png",
+              "ataque_furia/animations/ataque_furia/east/frame_006.png",
+              "ataque_furia/animations/ataque_furia/east/frame_007.png",
+              "ataque_furia/animations/ataque_furia/east/frame_008.png",
+              "ataque_furia/animations/ataque_furia/east/frame_009.png",
+              "ataque_furia/animations/ataque_furia/east/frame_010.png",
+              "ataque_furia/animations/ataque_furia/east/frame_011.png",
+              "ataque_furia/animations/ataque_furia/east/frame_012.png",
+              "ataque_furia/animations/ataque_furia/east/frame_013.png",
+              "ataque_furia/animations/ataque_furia/east/frame_014.png",
+              "ataque_furia/animations/ataque_furia/east/frame_015.png",
+              "ataque_furia/animations/ataque_furia/east/frame_016.png"
+            ],
+            "north-east": [
+              "ataque_furia/animations/ataque_furia/north-east/frame_000.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_001.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_002.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_003.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_004.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_005.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_006.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_007.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_008.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_009.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_010.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_011.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_012.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_013.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_014.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_015.png",
+              "ataque_furia/animations/ataque_furia/north-east/frame_016.png"
+            ],
+            "west": [
+              "ataque_furia/animations/ataque_furia/west/frame_000.png",
+              "ataque_furia/animations/ataque_furia/west/frame_001.png",
+              "ataque_furia/animations/ataque_furia/west/frame_002.png",
+              "ataque_furia/animations/ataque_furia/west/frame_003.png",
+              "ataque_furia/animations/ataque_furia/west/frame_004.png",
+              "ataque_furia/animations/ataque_furia/west/frame_005.png",
+              "ataque_furia/animations/ataque_furia/west/frame_006.png",
+              "ataque_furia/animations/ataque_furia/west/frame_007.png",
+              "ataque_furia/animations/ataque_furia/west/frame_008.png",
+              "ataque_furia/animations/ataque_furia/west/frame_009.png",
+              "ataque_furia/animations/ataque_furia/west/frame_010.png",
+              "ataque_furia/animations/ataque_furia/west/frame_011.png",
+              "ataque_furia/animations/ataque_furia/west/frame_012.png",
+              "ataque_furia/animations/ataque_furia/west/frame_013.png",
+              "ataque_furia/animations/ataque_furia/west/frame_014.png",
+              "ataque_furia/animations/ataque_furia/west/frame_015.png",
+              "ataque_furia/animations/ataque_furia/west/frame_016.png"
+            ],
+            "south": [
+              "ataque_furia/animations/ataque_furia/south/frame_000.png",
+              "ataque_furia/animations/ataque_furia/south/frame_001.png",
+              "ataque_furia/animations/ataque_furia/south/frame_002.png",
+              "ataque_furia/animations/ataque_furia/south/frame_003.png",
+              "ataque_furia/animations/ataque_furia/south/frame_004.png",
+              "ataque_furia/animations/ataque_furia/south/frame_005.png",
+              "ataque_furia/animations/ataque_furia/south/frame_006.png",
+              "ataque_furia/animations/ataque_furia/south/frame_007.png",
+              "ataque_furia/animations/ataque_furia/south/frame_008.png",
+              "ataque_furia/animations/ataque_furia/south/frame_009.png",
+              "ataque_furia/animations/ataque_furia/south/frame_010.png",
+              "ataque_furia/animations/ataque_furia/south/frame_011.png",
+              "ataque_furia/animations/ataque_furia/south/frame_012.png",
+              "ataque_furia/animations/ataque_furia/south/frame_013.png",
+              "ataque_furia/animations/ataque_furia/south/frame_014.png",
+              "ataque_furia/animations/ataque_furia/south/frame_015.png",
+              "ataque_furia/animations/ataque_furia/south/frame_016.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "802cf45b-4194-47f9-83d5-201532619a68",
+        "name": "ataque",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T18:47:49.077463+00:00"
+      },
+      "folder": "ataque",
+      "frames": {
+        "rotations": {
+          "south": "ataque/rotations/south.png",
+          "south-east": "ataque/rotations/south-east.png",
+          "east": "ataque/rotations/east.png",
+          "north-east": "ataque/rotations/north-east.png",
+          "north": "ataque/rotations/north.png",
+          "north-west": "ataque/rotations/north-west.png",
+          "west": "ataque/rotations/west.png",
+          "south-west": "ataque/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "fb1b141b-b013-4eed-9175-9e1b23b40c40",
+        "name": "aliado morre",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T18:52:23.555406+00:00"
+      },
+      "folder": "aliado_morre",
+      "frames": {
+        "rotations": {
+          "south": "aliado_morre/rotations/south.png",
+          "south-east": "aliado_morre/rotations/south-east.png",
+          "east": "aliado_morre/rotations/east.png",
+          "north-east": "aliado_morre/rotations/north-east.png",
+          "north": "aliado_morre/rotations/north.png",
+          "north-west": "aliado_morre/rotations/north-west.png",
+          "west": "aliado_morre/rotations/west.png",
+          "south-west": "aliado_morre/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "7d04c043-fca7-44ac-b74d-4a66cbda2216",
+        "name": "espada voa",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T18:53:40.911422+00:00"
+      },
+      "folder": "espada_voa",
+      "frames": {
+        "rotations": {
+          "south": "espada_voa/rotations/south.png",
+          "south-east": "espada_voa/rotations/south-east.png",
+          "east": "espada_voa/rotations/east.png",
+          "north-east": "espada_voa/rotations/north-east.png",
+          "north": "espada_voa/rotations/north.png",
+          "north-west": "espada_voa/rotations/north-west.png",
+          "west": "espada_voa/rotations/west.png",
+          "south-west": "espada_voa/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "495734b3-9458-47db-8a8c-6ce2419e7bec",
+        "name": "morte",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T19:05:51.397891+00:00"
+      },
+      "folder": "morte",
+      "frames": {
+        "rotations": {
+          "south": "morte/rotations/south.png",
+          "south-east": "morte/rotations/south-east.png",
+          "east": "morte/rotations/east.png",
+          "north-east": "morte/rotations/north-east.png",
+          "north": "morte/rotations/north.png",
+          "north-west": "morte/rotations/north-west.png",
+          "west": "morte/rotations/west.png",
+          "south-west": "morte/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "81298d8d-89ae-42b8-8461-e6e2c5751b01",
+        "name": "correndo",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T19:47:47.635763+00:00"
+      },
+      "folder": "correndo",
+      "frames": {
+        "rotations": {
+          "south": "correndo/rotations/south.png",
+          "south-east": "correndo/rotations/south-east.png",
+          "east": "correndo/rotations/east.png",
+          "north-east": "correndo/rotations/north-east.png",
+          "north": "correndo/rotations/north.png",
+          "north-west": "correndo/rotations/north-west.png",
+          "west": "correndo/rotations/west.png",
+          "south-west": "correndo/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "84bcee92-3f7a-4eac-ab80-e5917920a940",
+        "name": "andando",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T19:48:01.820750+00:00"
+      },
+      "folder": "andando",
+      "frames": {
+        "rotations": {
+          "south": "andando/rotations/south.png",
+          "south-east": "andando/rotations/south-east.png",
+          "east": "andando/rotations/east.png",
+          "north-east": "andando/rotations/north-east.png",
+          "north": "andando/rotations/north.png",
+          "north-west": "andando/rotations/north-west.png",
+          "west": "andando/rotations/west.png",
+          "south-west": "andando/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "f1255294-dc16-418e-a59b-7352960cdb74",
+        "name": "ataque furia (copy)",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T20:59:11.166041+00:00"
+      },
+      "folder": "ataque_furia_copy",
+      "frames": {
+        "rotations": {
+          "south": "ataque_furia_copy/rotations/south.png",
+          "south-east": "ataque_furia_copy/rotations/south-east.png",
+          "east": "ataque_furia_copy/rotations/east.png",
+          "north-east": "ataque_furia_copy/rotations/north-east.png",
+          "north": "ataque_furia_copy/rotations/north.png",
+          "north-west": "ataque_furia_copy/rotations/north-west.png",
+          "west": "ataque_furia_copy/rotations/west.png",
+          "south-west": "ataque_furia_copy/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "f261843c-7a60-4db9-a69f-965776f8ed93",
+        "name": "Rota\u00e7\u00e3o",
+        "prompt": "Ayra",
+        "size": {
+          "width": 44,
+          "height": 40
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-11-06T20:59:32.231712+00:00"
+      },
+      "folder": "Rotacao",
+      "frames": {
+        "rotations": {
+          "south": "Rotacao/rotations/south.png",
+          "south-east": "Rotacao/rotations/south-east.png",
+          "east": "Rotacao/rotations/east.png",
+          "north-east": "Rotacao/rotations/north-east.png",
+          "north": "Rotacao/rotations/north.png",
+          "north-west": "Rotacao/rotations/north-west.png",
+          "west": "Rotacao/rotations/west.png",
+          "south-west": "Rotacao/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-08T01:15:45.777594"
+}

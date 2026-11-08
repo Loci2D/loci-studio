@@ -1,11 +1,36 @@
+-- src/screen_selector.lua
+-- Tela Inicial de Seleção de Personagem e Configuração de Habilidades
 local UI = require("src.ui")
 local Anim = require("src.anim")
+local CharacterLoader = require("src.character_loader")
 
 local SKILL_TYPES = {
     { id = "melee", label = "Melee (Golpe)" },
     { id = "projectile", label = "Projétil (Disparo)" },
     { id = "dash", label = "Dash (Investida)" },
     { id = "area", label = "Área / Aura (AoE)" }
+}
+
+local DIRECTIONS_ORDER = {
+    "south",
+    "south-west",
+    "west",
+    "north-west",
+    "north",
+    "north-east",
+    "east",
+    "south-east"
+}
+
+local DIR_LABELS = {
+    ["south"] = "Sul (S ↓)",
+    ["south-west"] = "Sudoeste (SW ↙)",
+    ["west"] = "Oeste (W ←)",
+    ["north-west"] = "Noroeste (NW ↖)",
+    ["north"] = "Norte (N ↑)",
+    ["north-east"] = "Nordeste (NE ↗)",
+    ["east"] = "Leste (E →)",
+    ["south-east"] = "Sudeste (SE ↘)"
 }
 
 local Selector = {
@@ -21,12 +46,16 @@ local Selector = {
     },
     anim_state = Anim.new_state(),
     preview_config = {
-        step_frequency = 13,
-        max_tilt_deg = 6,
-        bob_pixels = 1.5,
-        squash_amount = 0.05,
+        step_frequency = 12,
+        max_tilt_deg = 4,
+        bob_pixels = 1.2,
+        squash_amount = 0.04,
         stop_smoothness = 12
     },
+
+    -- Controle de Rotação 360 no Preview
+    selected_dir_idx = 1, -- 1 = south
+    selected_state_name = "idle",
 
     -- Estado da Ação de Preview
     preview_action = {
@@ -45,7 +74,7 @@ local Selector = {
     }
 }
 
-function Selector.scan_folder(folder_path)
+function Selector.scan_skills(folder_path)
     local items = {}
     local files = love.filesystem.getDirectoryItems(folder_path)
     for _, file in ipairs(files) do
@@ -68,24 +97,30 @@ function Selector.scan_folder(folder_path)
 end
 
 function Selector.load()
-    Selector.characters = Selector.scan_folder("sprites/characters")
-    Selector.skills = Selector.scan_folder("sprites/skills")
+    Selector.characters = CharacterLoader.scan_characters("sprites/characters")
+    Selector.skills = Selector.scan_skills("sprites/skills")
 
     if #Selector.characters == 0 then
-        local img_data = love.image.newImageData(16, 16)
-        for y = 0, 15 do
-            for x = 0, 15 do
+        local img_data = love.image.newImageData(32, 32)
+        for y = 0, 31 do
+            for x = 0, 31 do
                 img_data:setPixel(x, y, 1, 0.4, 0.7, 1)
             end
         end
         local fallback_img = love.graphics.newImage(img_data)
         fallback_img:setFilter("nearest", "nearest")
         table.insert(Selector.characters, {
-            filename = "placeholder_16x16.png",
+            type = "legacy",
+            name = "Placeholder",
+            filename = "placeholder_32x32.png",
             path = "builtin",
             image = fallback_img,
-            width = 16,
-            height = 16
+            preview_image = fallback_img,
+            width = 32,
+            height = 32,
+            is_32px = true,
+            get_rotation_image = function() return fallback_img end,
+            get_animation_frames = function() return { fallback_img } end
         })
     end
 
@@ -104,12 +139,23 @@ function Selector.load()
     end
 end
 
+function Selector.rotate_preview(delta)
+    Selector.selected_dir_idx = Selector.selected_dir_idx + delta
+    if Selector.selected_dir_idx > #DIRECTIONS_ORDER then
+        Selector.selected_dir_idx = 1
+    elseif Selector.selected_dir_idx < 1 then
+        Selector.selected_dir_idx = #DIRECTIONS_ORDER
+    end
+    Selector.anim_state.direction = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+end
+
 function Selector.play_preview(slot_id)
     local slot_info = Selector.skill_slots[slot_id]
     if not slot_info then return end
 
     local type_obj = SKILL_TYPES[slot_info.type_idx] or SKILL_TYPES[1]
     local sprite_obj = Selector.skills[slot_info.sprite_idx]
+    local cur_char = Selector.characters[Selector.selected_char_idx]
 
     local act = Selector.preview_action
     act.active = true
@@ -124,8 +170,18 @@ function Selector.play_preview(slot_id)
     act.particles = {}
     act.areas = {}
 
+    -- Se o personagem for PixelLab e a habilidade for Melee, tenta tocar animação de fúria/ataque
+    if cur_char and cur_char.type == "pixellab" and act.type == "melee" and cur_char.state_fury then
+        Anim.play_animation(Selector.anim_state, cur_char, cur_char.state_fury, cur_char.state_fury, Selector.anim_state.direction, 18, false)
+        act.duration = 17 / 18
+    else
+        Anim.stop_animation(Selector.anim_state)
+    end
+
     if act.type == "melee" then
-        act.duration = 0.42
+        if not (cur_char and cur_char.type == "pixellab" and cur_char.state_fury) then
+            act.duration = 0.42
+        end
         for _ = 1, 8 do
             local p_ang = (math.random() - 0.5) * 1.0
             table.insert(act.particles, {
@@ -176,7 +232,10 @@ function Selector.play_preview(slot_id)
 end
 
 function Selector.update(dt)
-    Anim.update_walk(Selector.anim_state, true, 1, dt, Selector.preview_config)
+    local cur_char = Selector.characters[Selector.selected_char_idx]
+    Selector.anim_state.direction = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+
+    Anim.update(Selector.anim_state, cur_char, true, 1, 0, dt, Selector.preview_config)
 
     -- Atualiza animação da ação de preview
     local act = Selector.preview_action
@@ -247,6 +306,7 @@ function Selector.update(dt)
             act.slot_id = nil
             act.lunge_x = 0
             act.dash_x = 0
+            Anim.stop_animation(Selector.anim_state)
         end
     end
 
@@ -256,6 +316,7 @@ function Selector.update(dt)
     if love.keyboard.isDown("f5") then
         Selector.load()
     end
+
     return nil
 end
 
@@ -272,16 +333,16 @@ function Selector.draw()
     love.graphics.line(0, 70, sw, 70)
 
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("LOCI STUDIO — Sandbox de Sprites & Animações", 30, 16)
+    love.graphics.print("LOCI STUDIO — Sandbox de Sprites 32px & Animações", 30, 16)
     love.graphics.setColor(0.4, 0.75, 1, 1)
-    love.graphics.print("Passo 1: Escolha o personagem e configure os arquétipos das 4 habilidades", 30, 40)
+    love.graphics.print("Suporte a PixelLab (8 direções e quadros reais) e modo legado 16x16", 30, 40)
 
     if UI.button("btn_reload", "Recarregar Pastas (F5)", sw - 230, 18, 200, 36) then
         Selector.load()
     end
 
     -- Coluna 1: Lista de Personagens
-    local col1_w = 320
+    local col1_w = 330
     local col1_x = 30
     local col1_y = 90
     local col1_h = sh - 170
@@ -291,8 +352,11 @@ function Selector.draw()
     local item_y = col1_y + 48
     for i, char in ipairs(Selector.characters) do
         local is_sel = (i == Selector.selected_char_idx)
-        if UI.button("char_" .. i, string.format("%s (%dx%d)", char.filename, char.width, char.height), col1_x + 14, item_y, col1_w - 28, 42, is_sel) then
+        local tag = (char.type == "pixellab") and "[PixelLab 8-Dir]" or "[16x16]"
+        local label = string.format("%s %s (%dx%d)", tag, char.name, char.width, char.height)
+        if UI.button("char_" .. i, label, col1_x + 14, item_y, col1_w - 28, 42, is_sel) then
             Selector.selected_char_idx = i
+            Anim.stop_animation(Selector.anim_state)
         end
         item_y = item_y + 48
         if item_y > col1_y + col1_h - 50 then break end
@@ -300,7 +364,7 @@ function Selector.draw()
 
     -- Coluna 2: Preview Ampliado do Personagem Selecionado
     local col2_x = col1_x + col1_w + 20
-    local col2_w = 360
+    local col2_w = 380
     local col2_y = 90
     local col2_h = col1_h
 
@@ -309,8 +373,8 @@ function Selector.draw()
     local cur_char = Selector.characters[Selector.selected_char_idx]
     if cur_char then
         local prev_cx = col2_x + col2_w / 2
-        local prev_cy = col2_y + 190
-        local prev_box_w, prev_box_h = 240, 240
+        local prev_cy = col2_y + 175
+        local prev_box_w, prev_box_h = 260, 240
 
         -- Fundo do quadro de pré-visualização
         love.graphics.setColor(0.18, 0.22, 0.28, 1)
@@ -323,7 +387,10 @@ function Selector.draw()
 
         local act = Selector.preview_action
         local draw_char_x = prev_cx + (act.active and (act.lunge_x + act.dash_x) or 0)
-        local draw_char_y = prev_cy + 55
+        local draw_char_y = prev_cy + 65
+
+        -- Zoom adaptativo: 5x para 32px/PixelLab, 8x para 16x16 legado
+        local preview_zoom = (cur_char.type == "pixellab") and 4.5 or 8.0
 
         -- Áreas / AoE no Preview
         for _, a in ipairs(act.areas) do
@@ -344,14 +411,17 @@ function Selector.draw()
         -- Fantasma do Dash no Preview
         if act.active and act.type == "dash" then
             love.graphics.setColor(0.3, 0.7, 1, 0.35)
-            love.graphics.draw(cur_char.image, draw_char_x - 14, draw_char_y, 0, 8, 8, cur_char.image:getWidth() / 2, cur_char.image:getHeight())
+            local ghost_img = cur_char:get_rotation_image(cur_char.state_idle, Selector.anim_state.direction)
+            if ghost_img then
+                love.graphics.draw(ghost_img, draw_char_x - 14, draw_char_y, 0, preview_zoom, preview_zoom, ghost_img:getWidth() / 2, ghost_img:getHeight())
+            end
         end
 
-        -- Personagem com balanço procedural
-        Anim.draw_sprite(cur_char.image, draw_char_x, draw_char_y, Selector.anim_state, 8, 1, true, {0.95, 0.2, 0.2, 0.6})
+        -- Desenho do Personagem
+        Anim.draw_character(cur_char, draw_char_x, draw_char_y, Selector.anim_state, preview_zoom, true, {0.95, 0.2, 0.2, 0.6})
 
-        -- Melee Slash FX no Preview
-        if act.active and act.type == "melee" then
+        -- Melee Slash FX no Preview (quando não houver animação nativa do personagem)
+        if act.active and act.type == "melee" and not Selector.anim_state.is_playing_anim then
             local prog = act.timer / act.duration
             if prog >= 0.20 and prog <= 0.75 then
                 local s_prog = (prog - 0.20) / 0.55
@@ -394,23 +464,40 @@ function Selector.draw()
 
         love.graphics.setScissor() -- Restaura o Scissor
 
+        -- Controles de Rotação 360 no Preview
+        local rot_y = prev_cy + prev_box_h / 2 + 10
+        local rot_btn_w = 40
+        if UI.button("btn_rot_prev", "↺ Q", prev_cx - 120, rot_y, rot_btn_w, 28) then
+            Selector.rotate_preview(1)
+        end
+
+        local dir_name = DIRECTIONS_ORDER[Selector.selected_dir_idx]
+        local dir_label = DIR_LABELS[dir_name] or dir_name
+        UI.button("btn_dir_label", dir_label, prev_cx - 75, rot_y, 150, 28, false)
+
+        if UI.button("btn_rot_next", "E ↻", prev_cx + 80, rot_y, rot_btn_w, 28) then
+            Selector.rotate_preview(-1)
+        end
+
         -- Status do Preview
         if act.active then
             love.graphics.setColor(0.2, 0.85, 0.45, 1)
             love.graphics.print(string.format("▶ Testando: Slot %d [%s]", act.slot_id, act.type_label), prev_cx - 95, prev_cy - prev_box_h / 2 - 20)
         else
             love.graphics.setColor(0.6, 0.7, 0.8, 1)
-            love.graphics.print("Clique em [▶ Play] em qualquer skill para testar aqui", prev_cx - 130, prev_cy - prev_box_h / 2 - 20)
+            love.graphics.print("Gire as 8 direções com Q / E ou teste skills em [▶ Play]", prev_cx - 150, prev_cy - prev_box_h / 2 - 20)
         end
 
         love.graphics.setColor(0.9, 0.95, 1, 1)
-        love.graphics.print(string.format("Arquivo: %s", cur_char.filename), col2_x + 20, col2_y + col2_h - 75)
+        love.graphics.print(string.format("Nome: %s", cur_char.name), col2_x + 20, col2_y + col2_h - 75)
         love.graphics.setColor(0.5, 0.7, 0.9, 1)
-        love.graphics.print(string.format("Resolução: %dx%d px (Escala de visualização: 8x)", cur_char.width, cur_char.height), col2_x + 20, col2_y + col2_h - 52)
-        love.graphics.print("Animação: Rotação no pivô dos pés + Bobbing vertical", col2_x + 20, col2_y + col2_h - 32)
+        local fmt_str = (cur_char.type == "pixellab") and "Formato: PixelLab 32px (8 Direções nativas)" or "Formato: Legado 16x16 (Flip horizontal)"
+        love.graphics.print(fmt_str, col2_x + 20, col2_y + col2_h - 52)
+        local anim_str = (cur_char.type == "pixellab") and "Animações: Frames por direção + Rotações em repouso" or "Animação: Rotação no pivô dos pés + Bobbing vertical"
+        love.graphics.print(anim_str, col2_x + 20, col2_y + col2_h - 32)
     end
 
-    -- Coluna 3: Configuração das 4 Habilidades (Modular: Tipo + Sprite + Botão Play)
+    -- Coluna 3: Configuração das 4 Habilidades
     local col3_x = col2_x + col2_w + 20
     local col3_w = sw - col3_x - 30
     local col3_y = 90
@@ -479,7 +566,7 @@ function Selector.draw()
     love.graphics.line(0, footer_y, sw, footer_y)
 
     love.graphics.setColor(0.6, 0.7, 0.8, 1)
-    love.graphics.print("Dica: Clique em [▶ Play] ao lado de cada habilidade para testar visualmente no preview.", 30, footer_y + 26)
+    love.graphics.print("Dica: Use Q / E para inspecionar as 8 direções do personagem selecionado.", 30, footer_y + 26)
 
     if UI.button("btn_start", "Iniciar Arena Sandbox (Enter)", sw - 320, footer_y + 14, 290, 42, true, {0.15, 0.75, 0.35}) then
         return "start_arena"

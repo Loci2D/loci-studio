@@ -1,5 +1,19 @@
+-- src/screen_arena.lua
+-- Arena Sandbox Interativa: Movimentação em 8 Direções & Teste de Animações PixelLab
 local UI = require("src.ui")
 local Anim = require("src.anim")
+local CharacterLoader = require("src.character_loader")
+
+local DIR_LABELS = {
+    ["south"] = "Sul (S ↓)",
+    ["south-west"] = "Sudoeste (SW ↙)",
+    ["west"] = "Oeste (W ←)",
+    ["north-west"] = "Noroeste (NW ↖)",
+    ["north"] = "Norte (N ↑)",
+    ["north-east"] = "Nordeste (NE ↗)",
+    ["east"] = "Leste (E →)",
+    ["south-east"] = "Sudeste (SE ↘)"
+}
 
 local Arena = {
     selected_char = nil,
@@ -8,19 +22,19 @@ local Arena = {
     -- Estado do Jogador
     x = 420,
     y = 360,
-    speed = 130, -- Velocidade de movimento configurável
-    facing = 1,
-    dir_x = 1,
-    dir_y = 0,
+    speed = 135,
+    dir_x = 0,
+    dir_y = 1,
     walk_in_place = false,
     anim_state = Anim.new_state(),
+    anim_fps = 18,
 
     -- Parâmetros de Caminhada
     walk_config = {
-        step_frequency = 13,
-        max_tilt_deg = 6,
-        bob_pixels = 1.5,
-        squash_amount = 0.05,
+        step_frequency = 12,
+        max_tilt_deg = 4,
+        bob_pixels = 1.2,
+        squash_amount = 0.04,
         stop_smoothness = 12
     },
 
@@ -71,18 +85,33 @@ function Arena.init(data)
     Arena.slots = data.slots or {}
     Arena.x = 420
     Arena.y = 360
-    Arena.speed = 130
+    Arena.speed = 135
+    Arena.dir_x = 0
+    Arena.dir_y = 1
     Arena.active_projectiles = {}
     Arena.active_particles = {}
     Arena.active_areas = {}
     Arena.is_attacking = false
     Arena.is_dashing = false
     Arena.export_popup_timer = 0
+    Arena.anim_state = Anim.new_state()
+    Arena.anim_state.direction = "south"
+    Arena.anim_fps = 18
+
+    if Arena.selected_char and Arena.selected_char.type == "pixellab" then
+        Arena.zoom = 4
+        Arena.walk_config.max_tilt_deg = 3
+        Arena.walk_config.bob_pixels = 1.0
+    else
+        Arena.zoom = 4
+    end
 end
 
 function Arena.trigger_skill(slot_id)
     local slot = Arena.slots[slot_id]
     if not slot then return end
+
+    local char = Arena.selected_char
 
     if slot.type == "melee" then
         if Arena.is_attacking then return end
@@ -90,6 +119,14 @@ function Arena.trigger_skill(slot_id)
         Arena.current_melee_slot = slot
         Arena.attack_timer = 0
         Arena.screen_shake = 3.5
+
+        -- Se for personagem PixelLab com animação dedicada (ex: ataque_furia)
+        if char and char.type == "pixellab" and char.state_fury then
+            Anim.play_animation(Arena.anim_state, char, char.state_fury, char.state_fury, Arena.anim_state.direction, Arena.anim_fps, false)
+            Arena.attack_duration = 17 / Arena.anim_fps
+        else
+            Arena.attack_duration = 0.22
+        end
 
         local angle = math.atan2(Arena.dir_y, Arena.dir_x)
         for _ = 1, 10 do
@@ -157,7 +194,9 @@ function Arena.trigger_skill(slot_id)
 end
 
 function Arena.export_config()
-    local char_name = Arena.selected_char and Arena.selected_char.filename or "character.png"
+    local char_name = Arena.selected_char and Arena.selected_char.name or "character"
+    local char_type = Arena.selected_char and Arena.selected_char.type or "legacy"
+    local is_32px = (char_type == "pixellab")
 
     local slot_code = ""
     for i = 1, 4 do
@@ -182,13 +221,21 @@ function Arena.export_config()
     local code = string.format([[
 -- ============================================================================
 -- EXPORTAÇÃO DE CONFIGURAÇÕES - LOCI STUDIO
--- Personagem: %s
+-- Personagem: %s (Modelo: %s, 8 Direções: %s)
 -- ============================================================================
+local CHARACTER_CONFIG = {
+    name            = "%s",
+    model           = "%s",
+    resolution_base = %d,
+    has_8_directions = %s,
+    anim_fps        = %d
+}
+
 local WALK_CONFIG = {
     move_speed      = %d,      -- Velocidade de movimento (pixels/s)
     step_frequency  = %d,      -- Ritmo dos passos
     max_tilt_deg    = %d,       -- Inclinação lateral (graus)
-    bob_pixels      = %.2f,    -- Elevação vertical em pixels 16x16
+    bob_pixels      = %.2f,    -- Elevação vertical nos pés
     squash_amount   = %.2f,    -- Compressão no solo (squash & stretch)
     stop_smoothness = %d       -- Retorno suave à postura neutra
 }
@@ -197,6 +244,13 @@ local SKILLS_CONFIG = {
 %s}
 ]],
         char_name,
+        char_type,
+        is_32px and "true" or "false (legado)",
+        char_name,
+        char_type,
+        is_32px and 32 or 16,
+        is_32px and "true" or "false",
+        Arena.anim_fps,
         math.floor(Arena.speed + 0.5),
         math.floor(Arena.walk_config.step_frequency + 0.5),
         math.floor(Arena.walk_config.max_tilt_deg + 0.5),
@@ -225,11 +279,11 @@ function Arena.update(dt)
         Arena.export_popup_timer = Arena.export_popup_timer - dt
     end
 
-    -- Processa Movimentação
+    -- Processa Movimentação em 8 Direções
     local dx, dy = 0, 0
     if not Arena.is_dashing then
-        if love.keyboard.isDown("a", "left") then dx = dx - 1 Arena.facing = -1 end
-        if love.keyboard.isDown("d", "right") then dx = dx + 1 Arena.facing = 1 end
+        if love.keyboard.isDown("a", "left") then dx = dx - 1 end
+        if love.keyboard.isDown("d", "right") then dx = dx + 1 end
         if love.keyboard.isDown("w", "up") then dy = dy - 1 end
         if love.keyboard.isDown("s", "down") then dy = dy + 1 end
     end
@@ -253,7 +307,7 @@ function Arena.update(dt)
         Arena.y = math.max(60, math.min(love.graphics.getHeight() - 60, Arena.y))
     end
 
-    Anim.update_walk(Arena.anim_state, is_moving, Arena.facing, dt, Arena.walk_config)
+    Anim.update(Arena.anim_state, Arena.selected_char, is_moving, dx, dy, dt, Arena.walk_config)
 
     -- Atualiza Ataque Melee
     if Arena.is_attacking then
@@ -278,6 +332,7 @@ function Arena.update(dt)
             Arena.is_attacking = false
             Arena.attack_lunge_x = 0
             Arena.attack_lunge_y = 0
+            Anim.stop_animation(Arena.anim_state)
         end
     end
 
@@ -409,20 +464,25 @@ function Arena.draw()
     end
 
     -- 3. Jogador
-    local char_img = Arena.selected_char and Arena.selected_char.image
-    if char_img then
+    local char = Arena.selected_char
+    if char then
         local draw_x = Arena.x + Arena.attack_lunge_x
         local draw_y = Arena.y + Arena.attack_lunge_y
 
+        -- Fantasma do Dash
         if Arena.is_dashing then
-            love.graphics.setColor(0.3, 0.7, 1, 0.4)
-            love.graphics.draw(char_img, draw_x - Arena.dir_x * 12, draw_y - Arena.dir_y * 12, 0, Arena.zoom * Arena.facing, Arena.zoom, char_img:getWidth() / 2, char_img:getHeight())
+            love.graphics.setColor(0.3, 0.7, 1, 0.35)
+            local ghost_img = char:get_rotation_image(char.state_idle, Arena.anim_state.direction)
+            if ghost_img then
+                love.graphics.draw(ghost_img, draw_x - Arena.dir_x * 14, draw_y - Arena.dir_y * 14, 0, Arena.zoom, Arena.zoom, ghost_img:getWidth() / 2, ghost_img:getHeight())
+            end
         end
 
-        Anim.draw_sprite(char_img, draw_x, draw_y, Arena.anim_state, Arena.zoom, Arena.facing, Arena.show_shadow, {0.95, 0.2, 0.2, 0.55})
+        -- Renderização do personagem com o novo motor
+        Anim.draw_character(char, draw_x, draw_y, Arena.anim_state, Arena.zoom, Arena.show_shadow, {0.95, 0.2, 0.2, 0.55})
 
-        -- Slash / Melee FX
-        if Arena.is_attacking then
+        -- Slash / Melee FX (desenhado quando não houver animação dedicada de ataque com espada)
+        if Arena.is_attacking and not Arena.anim_state.is_playing_anim then
             local prog = Arena.attack_timer / Arena.attack_duration
             if prog >= 0.20 and prog <= 0.70 then
                 local s_prog = (prog - 0.20) / 0.50
@@ -470,7 +530,7 @@ function Arena.draw()
 
     love.graphics.pop()
 
-    -- 6. HUD Inferior Redesenhado (Hotbar Limpa e Profissional)
+    -- 6. HUD Inferior (Hotbar de Habilidades)
     local btn_w = 100
     local btn_h = 62
     local btn_spacing = 12
@@ -488,12 +548,10 @@ function Arena.draw()
         local short_name = get_short_type(slot)
         local is_hover = UI.is_hover(bx, by, btn_w, btn_h)
 
-        -- Trigger de clique no botão do HUD
         if is_hover and UI.mouse_pressed then
             Arena.trigger_skill(slot_id)
         end
 
-        -- Fundo do botão
         if is_hover then
             love.graphics.setColor(0.24, 0.29, 0.38, 1)
         else
@@ -501,7 +559,6 @@ function Arena.draw()
         end
         love.graphics.rectangle("fill", bx, by, btn_w, btn_h, 6, 6)
 
-        -- Borda
         if is_hover then
             love.graphics.setColor(0.35, 0.75, 1.0, 1)
         else
@@ -510,7 +567,6 @@ function Arena.draw()
         love.graphics.setLineWidth(1.5)
         love.graphics.rectangle("line", bx, by, btn_w, btn_h, 6, 6)
 
-        -- Badge de Tecla (Atalho) no topo esquerdo
         local key_label = tostring(slot_id)
         if slot_id == 1 then key_label = "1/Esp" end
         love.graphics.setColor(0.20, 0.55, 0.90, 0.85)
@@ -518,13 +574,11 @@ function Arena.draw()
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.print(key_label, bx + 9, by + 6)
 
-        -- Ícone / Miniatura do Sprite (se houver) no centro
         if slot and slot.sprite then
             love.graphics.setColor(1, 1, 1, 1)
             love.graphics.draw(slot.sprite, bx + btn_w / 2, by + 26, 0, 1.5, 1.5, slot.sprite:getWidth() / 2, slot.sprite:getHeight() / 2)
         end
 
-        -- Rótulo Conciso no rodapé do botão (Melee, Projétil, Dash, Área)
         local font = love.graphics.getFont()
         local tw = font:getWidth(short_name)
         love.graphics.setColor(is_hover and 1 or 0.85, is_hover and 1 or 0.90, is_hover and 1 or 0.95, 1)
@@ -538,94 +592,106 @@ function Arena.draw()
 
     UI.panel(sb_x, sb_y, sidebar_w, sb_h, "Ajustes em Tempo Real")
 
-    local cy = 44
+    local cy = 42
     local pad = 14
     local ctrl_w = sidebar_w - pad * 2
+
+    -- Badge do Personagem e Direção
+    local char_badge = char and char.name or "Personagem"
+    local dir_label = DIR_LABELS[Arena.anim_state.direction] or Arena.anim_state.direction
+    love.graphics.setColor(0.2, 0.25, 0.35, 1)
+    love.graphics.rectangle("fill", sb_x + pad, cy, ctrl_w, 40, 6, 6)
+    love.graphics.setColor(0.4, 0.8, 1, 1)
+    love.graphics.print(string.format("%s (%s)", char_badge, (char and char.type == "pixellab") and "32px 8-Dir" or "16x16"), sb_x + pad + 8, cy + 6)
+    love.graphics.setColor(0.85, 0.9, 1, 1)
+    love.graphics.print(string.format("Direção: %s", dir_label), sb_x + pad + 8, cy + 22)
+    cy = cy + 48
 
     -- Seção 1: Distâncias Dinâmicas por Slot
     love.graphics.setColor(0.4, 0.8, 1, 1)
     love.graphics.print("DISTÂNCIAS DAS HABILIDADES", sb_x + pad, cy)
-    cy = cy + 20
+    cy = cy + 18
 
     for slot_id = 1, 4 do
         local slot = Arena.slots[slot_id]
         if slot then
             if slot.type == "melee" then
                 local lbl = string.format("Slot %d (Melee): Lunge", slot_id)
-                slot.lunge_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.lunge_pixels or 8, 0, 30, 1, sb_x + pad, cy, ctrl_w, 34, " px")
-                cy = cy + 40
+                slot.lunge_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.lunge_pixels or 8, 0, 30, 1, sb_x + pad, cy, ctrl_w, 32, " px")
+                cy = cy + 36
             elseif slot.type == "projectile" then
                 local lbl = string.format("Slot %d (Projétil): Alcance", slot_id)
-                slot.range_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.range_pixels or 240, 50, 400, 10, sb_x + pad, cy, ctrl_w, 34, " px")
-                cy = cy + 40
+                slot.range_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.range_pixels or 240, 50, 400, 10, sb_x + pad, cy, ctrl_w, 32, " px")
+                cy = cy + 36
             elseif slot.type == "dash" then
                 local lbl = string.format("Slot %d (Dash): Distância", slot_id)
-                slot.dash_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.dash_pixels or 80, 20, 180, 5, sb_x + pad, cy, ctrl_w, 34, " px")
-                cy = cy + 40
+                slot.dash_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.dash_pixels or 80, 20, 180, 5, sb_x + pad, cy, ctrl_w, 32, " px")
+                cy = cy + 36
             elseif slot.type == "area" then
                 local lbl = string.format("Slot %d (Área): Raio AoE", slot_id)
-                slot.radius_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.radius_pixels or 45, 15, 100, 5, sb_x + pad, cy, ctrl_w, 34, " px")
-                cy = cy + 40
+                slot.radius_pixels = UI.slider("sld_s_" .. slot_id, lbl, slot.radius_pixels or 45, 15, 100, 5, sb_x + pad, cy, ctrl_w, 32, " px")
+                cy = cy + 36
             end
         end
     end
 
     cy = cy + 6
 
-    -- Seção 2: Parâmetros da Caminhada
+    -- Seção 2: Parâmetros da Animação e Movimentação
     love.graphics.setColor(0.4, 0.8, 1, 1)
-    love.graphics.print("PARÂMETROS DA CAMINHADA", sb_x + pad, cy)
-    cy = cy + 20
+    love.graphics.print("PARÂMETROS DE MOVIMENTAÇÃO", sb_x + pad, cy)
+    cy = cy + 18
 
-    -- Slider de Velocidade de Movimento (NOVO!)
-    Arena.speed = UI.slider("sld_speed", "Velocidade de Movimento", Arena.speed, 50, 300, 5, sb_x + pad, cy, ctrl_w, 34, " px/s")
-    cy = cy + 40
+    Arena.speed = UI.slider("sld_speed", "Velocidade de Movimento", Arena.speed, 50, 300, 5, sb_x + pad, cy, ctrl_w, 32, " px/s")
+    cy = cy + 36
 
-    Arena.walk_config.step_frequency = UI.slider("sld_freq", "Ritmo dos Passos", Arena.walk_config.step_frequency, 5, 25, 1, sb_x + pad, cy, ctrl_w, 34)
-    cy = cy + 40
+    if char and char.type == "pixellab" then
+        Arena.anim_fps = UI.slider("sld_fps", "FPS Animação (PixelLab)", Arena.anim_fps, 8, 30, 1, sb_x + pad, cy, ctrl_w, 32, " fps")
+        cy = cy + 36
+    end
 
-    Arena.walk_config.max_tilt_deg = UI.slider("sld_tilt", "Inclinação Lateral (Tilt)", Arena.walk_config.max_tilt_deg, 0, 20, 1, sb_x + pad, cy, ctrl_w, 34, "°")
-    cy = cy + 40
+    Arena.walk_config.step_frequency = UI.slider("sld_freq", "Ritmo dos Passos", Arena.walk_config.step_frequency, 5, 25, 1, sb_x + pad, cy, ctrl_w, 32)
+    cy = cy + 36
 
-    Arena.walk_config.bob_pixels = UI.slider("sld_bob", "Elevação do Passo (Bob)", Arena.walk_config.bob_pixels, 0, 4, 0.25, sb_x + pad, cy, ctrl_w, 34, " px")
-    cy = cy + 40
+    Arena.walk_config.max_tilt_deg = UI.slider("sld_tilt", "Inclinação Lateral (Tilt)", Arena.walk_config.max_tilt_deg, 0, 15, 1, sb_x + pad, cy, ctrl_w, 32, "°")
+    cy = cy + 36
 
-    Arena.walk_config.squash_amount = UI.slider("sld_squash", "Squash & Stretch", Arena.walk_config.squash_amount, 0, 0.15, 0.01, sb_x + pad, cy, ctrl_w, 34)
-    cy = cy + 42
+    Arena.walk_config.bob_pixels = UI.slider("sld_bob", "Elevação do Passo (Bob)", Arena.walk_config.bob_pixels, 0, 3, 0.25, sb_x + pad, cy, ctrl_w, 32, " px")
+    cy = cy + 38
 
     -- Seção 3: Visual & Câmera
     local wip_text = Arena.walk_in_place and "Andando no Lugar: [ON]" or "Andando no Lugar: [OFF]"
-    if UI.button("btn_wip", wip_text, sb_x + pad, cy, ctrl_w, 28, Arena.walk_in_place) then
+    if UI.button("btn_wip", wip_text, sb_x + pad, cy, ctrl_w, 26, Arena.walk_in_place) then
         Arena.walk_in_place = not Arena.walk_in_place
     end
-    cy = cy + 32
+    cy = cy + 30
 
     local z_w = (ctrl_w - 9) / 4
-    for idx, z_val in ipairs({2, 4, 6, 8}) do
-        if UI.button("btn_zoom_" .. z_val, z_val .. "x", sb_x + pad + (idx - 1) * (z_w + 3), cy, z_w, 26, (Arena.zoom == z_val)) then
+    for idx, z_val in ipairs({2, 3, 4, 6}) do
+        if UI.button("btn_zoom_" .. z_val, z_val .. "x", sb_x + pad + (idx - 1) * (z_w + 3), cy, z_w, 24, (Arena.zoom == z_val)) then
             Arena.zoom = z_val
         end
     end
-    cy = cy + 30
+    cy = cy + 28
 
     local bg_name = "Fundo: Grid Arena"
     if Arena.bg_style == 2 then bg_name = "Fundo: Escuro Neutro" end
     if Arena.bg_style == 3 then bg_name = "Fundo: Claro" end
     if Arena.bg_style == 4 then bg_name = "Fundo: Magenta" end
 
-    if UI.button("btn_bg", bg_name, sb_x + pad, cy, ctrl_w, 26) then
+    if UI.button("btn_bg", bg_name, sb_x + pad, cy, ctrl_w, 24) then
         Arena.bg_style = Arena.bg_style + 1
         if Arena.bg_style > 4 then Arena.bg_style = 1 end
     end
-    cy = cy + 32
+    cy = cy + 30
 
     -- Ações
-    if UI.button("btn_export", "Exportar Configuração", sb_x + pad, cy, ctrl_w, 32, true, {0.15, 0.70, 0.35}) then
+    if UI.button("btn_export", "Exportar Configuração", sb_x + pad, cy, ctrl_w, 30, true, {0.15, 0.70, 0.35}) then
         Arena.export_config()
     end
-    cy = cy + 36
+    cy = cy + 34
 
-    if UI.button("btn_back", "Trocar Configuração (Esc)", sb_x + pad, cy, ctrl_w, 30) then
+    if UI.button("btn_back", "Trocar Configuração (Esc)", sb_x + pad, cy, ctrl_w, 28) then
         return "back_to_selector"
     end
 
