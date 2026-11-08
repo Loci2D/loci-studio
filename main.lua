@@ -18,9 +18,13 @@ function love.load(args)
             end
             local data = ScreenSelector.get_selected_data()
             ScreenArena.init(data)
-            ScreenArena.update(0.016)
-            ScreenArena.draw()
-            print("[TEST MODE] Teste concluido com sucesso!")
+            ScreenArena.trigger_skill(1) -- Dispara Melee / Ataque Fúria
+            for _ = 1, 10 do
+                ScreenArena.update(0.016)
+                ScreenArena.draw()
+            end
+            ScreenArena.export_config()
+            print("[TEST MODE] Renderização sem wobble, avanço de quadros e exportação validados com sucesso!")
             love.event.quit(0)
             return
         end

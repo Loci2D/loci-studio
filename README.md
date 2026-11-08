@@ -60,12 +60,11 @@ Coloque aqui imagens de projéteis, arcos de corte ou efeitos visuais (ex: `fire
 - **Caminhar no Lugar:** Pressione a tecla `P` ou clique no botão para avaliar o ciclo de caminhada continuamente.
 - **Disparo de Habilidades:** Teclas `1`, `2`, `3`, `4`, `Espaço` ou clique no HUD para disparar os slots configurados.
 - **Painel Lateral de Ajustes em Tempo Real:**
-  - **Velocidade de Movimento:** Slider dinâmico (`speed` em px/s).
-  - **FPS de Animação PixelLab:** Slider de taxa de quadros (8 a 30 FPS) para avaliar a fluidez dos frames reais.
-  - **Caminhada e Balanço:** Ajuste de ritmo dos passos (`step_frequency`), inclinação lateral (`max_tilt_deg`), elevação do passo (`bob_pixels`) e compressão (`squash_amount`).
+  - **Velocidade de Movimento:** Slider dinâmico (`speed` em px/s) e alternador de modo de locomoção (`Andando` vs `Correndo`).
+  - **Player de Animações:** Slider de FPS (6 a 30 quadros/s), botões de teste direto dos estados (`Ataque Fúria`, `Ataque`, `Morte`), botão de pausa e navegação quadro a quadro (`◀ Frame` e `Frame ▶`) para inspeção minuciosa dos pixels.
   - **Distâncias das Habilidades:** Sliders adaptativos para alcance, lunge, distância de dash e raio de área.
   - **Câmera & Visual:** Zoom calibrado para 32px (`2x`, `3x`, `4x`, `6x`) e estilos de fundo de arena.
-- **Exportação de Configuração:** Clique em **"Exportar Configuração"** para gerar um código Lua pronto (`config_export.lua`) com a ficha técnica completa do personagem para o jogo e Trello.
+- **Exportação de Configuração:** Clique em **"Exportar Configuração"** para gerar um código Lua pronto (`config_export.lua`) com a ficha técnica completa do personagem para o jogo e Trello (resolução 32px, 8 direções nativas, FPS e velocidade de movimento, sem wobble).
 
 ---
 
